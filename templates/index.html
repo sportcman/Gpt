@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Генератор ответов.</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        label {
+            margin-bottom: 10px;
+        }
+        textarea {
+            width: 80%;
+            height: 150px;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            margin-bottom: 15px;
+            resize: none;
+        }
+        input[type="submit"] {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+        #result {
+            display: none;
+            margin-top: 20px;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            margin-bottom: 10px;
+            border-radius: 5px;
+            background-color: #f2f2f2;
+            padding: 10px;
+        }
+        pre {
+            font-family: "Courier New", Courier, monospace;
+            background-color: #f8f8f8;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            margin-bottom: 15px;
+            overflow-x: auto;
+        }
+        .keyword {
+            color: #0000FF;
+        }
+        .builtin {
+            color: #A020F0;
+        }
+        .string {
+            color: #008000;
+        }
+        .comment {
+            color: #808080;
+        }
+    </style>
+</head>
+<body>
+    <h1>Генератор ответов.</h1>
+    <form id="answerForm" method="post" action="/">
+        <label for="input_text">Введите вопрос:</label>
+        <textarea name="input_text" id="input_text"></textarea>
+        <input type="submit" value="Сгенерировать ответ">
+    </form>
+    <div id="result">
+        <h2>Результат:</h2>
+        <ul id="resultList"></ul>
+    </div>
+
+    <script>
+        document.getElementById('answerForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Предотвратить отправку формы
+            var inputText = document.getElementById('input_text').value;
+
+            // Отправить введенный текст на сервер
+            fetch('/', {
+                method: 'POST',
+                body: JSON.stringify({input_text: inputText}),
+                headers: {'Content-Type': 'application/json'}
+            })
+            .then(response => response.json())
+            .then(data => {
+                var resultList = document.getElementById('resultList');
+                resultList.innerHTML = ""; // Очистить список результатов
+
+                // Вывести сгенерированные ответы в список
+                data.result_text.forEach(function(answer) {
+                    var newResult = document.createElement('li');
+                    var preElement = document.createElement('pre');
+                    preElement.innerHTML = answer;
+
+                    // Выделение синтаксиса кода
+                    preElement.innerHTML = preElement.innerHTML.replace(/(import|from|class|def|for|while|if|else|elif|try|except|finally|return|yield|break|continue|pass|lambda|print)\b/g, '<span class="keyword">$1</span>');
+                    preElement.innerHTML = preElement.innerHTML.replace(/(\b\w+\.\w+\b)/g, '<span class="builtin">$1</span>');
+                    preElement.innerHTML = preElement.innerHTML.replace(/('[^']*'|"[^"]*")/g, '<span class="string">$1</span>');
+                    preElement.innerHTML = preElement.innerHTML.replace(/(#.*)/g, '<span class="comment">$1</span>');
+
+                    newResult.appendChild(preElement);
+                    resultList.appendChild(newResult);
+                });
+
+                document.getElementById('result').style.display = 'block'; // Показать результат
+            });
+        });
+    </script>
+</body>
+</html>
